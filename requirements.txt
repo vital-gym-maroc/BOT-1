@@ -1,5 +1,5 @@
-numpy==1.26.4
-pandas==2.2.3
+numpy
+pandas
 selenium==4.16.0
 beautifulsoup4==4.12.2
 requests==2.32.0
