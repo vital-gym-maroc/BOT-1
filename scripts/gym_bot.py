@@ -1,6 +1,7 @@
 import os
 import time
 import re
+import requests
 import pandas as pd
 from datetime import datetime
 from selenium import webdriver
@@ -36,9 +37,10 @@ options.add_experimental_option("prefs", {
     "safebrowsing.enabled": True,
 })
 
-service = Service("/usr/bin/chromedriver")
+service = Service("/usr/local/bin/chromedriver")
 driver = webdriver.Chrome(service=service, options=options)
 wait = WebDriverWait(driver, 20)
+
 
 
 
@@ -206,7 +208,7 @@ print("Scraping finished. Total records:", len(df))
 WEBHOOK_URL = "https://anasellll.app.n8n.cloud/webhook-test/6de02cf7-84c9-4491-a09d-3f04540c5372"
 
 # --- convert DataFrame rows to list of dicts ---
-data_to_send = df_all.to_dict(orient='records')
+data_to_send = df.to_dict(orient='records')
 
 # --- send each row separately or all at once ---
 try:
