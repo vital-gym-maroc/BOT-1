@@ -50,6 +50,7 @@ wait = WebDriverWait(driver, 20)
 driver.get('https://vita.clubi.ma/login')
 time.sleep(3)
 
+
 email_el = wait.until(EC.presence_of_element_located((By.ID, "email")))
 password_el = wait.until(EC.presence_of_element_located((By.ID, "password")))
 
@@ -204,19 +205,22 @@ df = df[cols]
 
 print("Scraping finished. Total records:", len(df))
 
-# --- your webhook URL ---
-WEBHOOK_URL = "https://anasellll.app.n8n.cloud/webhook-test/6de02cf7-84c9-4491-a09d-3f04540c5372"
+from google.oauth2.service_account import Credentials
+import gspread
 
-# --- convert DataFrame rows to list of dicts ---
-data_to_send = df.to_dict(orient='records')
+SERVICE_ACCOUNT_FILE = "linkedin.json"
+SCOPES = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive"
+]
 
-# --- send each row separately or all at once ---
-try:
-    response = requests.post(WEBHOOK_URL, json=data_to_send)
-    if response.status_code == 200:
-        print("Data sent successfully!")
-    else:
-        print(f"Failed to send data. Status code: {response.status_code}")
-        print(response.text)
-except Exception as e:
-    print(f"Error sending data: {e}")
+credentials = Credentials.from_service_account_file(
+    SERVICE_ACCOUNT_FILE,
+    scopes=SCOPES
+)
+
+client = gspread.authorize(credentials)
+
+# Open your sheet
+sheet = client.open("LISTE OF JOBS").sheet3
+sheet.clear()
