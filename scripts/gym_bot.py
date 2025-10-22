@@ -197,7 +197,10 @@ df['Les frais ajoutés'] = df['Les frais ajoutés'].apply(lambda x: str(x).split
 phone_cols = ['Téléphone', "Téléphone d'urgence"]
 
 for col in phone_cols:
-    df[col] = df[col].apply(lambda x: f"0{int(x)}" if pd.notnull(x) else x)
+    df[col] = df[col].apply(
+        lambda x: f"0{int(x)}" if pd.notnull(x) and str(x).strip().isdigit() else x
+    )
+
 df = df.drop(columns=['Unnamed: 0'])
 
 # Set 'ID' as the index
