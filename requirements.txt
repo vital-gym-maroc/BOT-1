@@ -5,3 +5,4 @@ beautifulsoup4==4.12.2
 requests==2.32.0
 gspread
 google-auth
+gspread-formatting
