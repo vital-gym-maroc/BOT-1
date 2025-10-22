@@ -223,5 +223,5 @@ credentials = Credentials.from_service_account_file(
 client = gspread.authorize(credentials)
 
 # Open your sheet
-sheet = client.open("LISTE OF JOBS").sheet3
+sheet = client.open("LISTE OF JOBS").worksheet("sheet3")
 sheet.clear()
