@@ -201,7 +201,7 @@ for col in phone_cols:
         lambda x: f"0{int(x)}" if pd.notnull(x) and str(x).strip().isdigit() else x
     )
 
-df = df.drop(columns=['Unnamed: 0'])
+#df = df.drop(columns=['Unnamed: 0'])
 
 # Set 'ID' as the index
 cols = ['ID'] + [c for c in df.columns if c != 'ID']
