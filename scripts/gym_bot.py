@@ -212,7 +212,7 @@ print("Scraping finished. Total records:", len(df))
 from google.oauth2.service_account import Credentials
 import gspread
 
-SERVICE_ACCOUNT_FILE = "linkedin.json"
+SERVICE_ACCOUNT_FILE = os.path.join(os.path.dirname(__file__), "linkedin.json")
 SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive"
