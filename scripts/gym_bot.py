@@ -213,8 +213,11 @@ import pandas as pd
 from google.oauth2.service_account import Credentials
 import gspread
 from gspread_formatting import *
+import os
 
-# === Google Sheets setup ===
+# ======================
+# Google Sheets setup
+# ======================
 SERVICE_ACCOUNT_FILE = os.path.join(os.path.dirname(__file__), "Gym_Json.json")
 SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
@@ -224,23 +227,31 @@ SCOPES = [
 credentials = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
 client = gspread.authorize(credentials)
 
-# === Split DataFrame ===
+
+# ======================
+# Split DataFrame
+# ======================
 df_actif = df[df["Statut"] == "actif"]
 df_inactif = df[df["Statut"] == "inactif"]
 
-# === Spreadsheet URL ===
+# ======================
+# Spreadsheet URL
+# ======================
 spreadsheet_url = "https://docs.google.com/spreadsheets/d/1mFq08rK9f5TNUiCkBbPBBKYJBV4EIxkTQIkjTlQNO48/edit"
 spreadsheet = client.open_by_url(spreadsheet_url)
 
-# === Function to add/update a sheet tab ===
+# ======================
+# Function to upload DF to a sheet with formatting
+# ======================
 def upload_df_to_sheet(df, sheet_name, color_rgb):
+    # Get or create the worksheet
     try:
         worksheet = spreadsheet.worksheet(sheet_name)
         worksheet.clear()
     except gspread.WorksheetNotFound:
         worksheet = spreadsheet.add_worksheet(title=sheet_name, rows=str(len(df)+10), cols=str(len(df.columns)+5))
     
-    # Upload data
+    # Upload data (header + values)
     worksheet.update([df.columns.values.tolist()] + df.values.tolist())
 
     # Apply borders
@@ -263,11 +274,17 @@ def upload_df_to_sheet(df, sheet_name, color_rgb):
 
     print(f"✅ Sheet '{sheet_name}' updated successfully!")
 
-# === Upload both tabs ===
+# ======================
+# Upload sheets
+# ======================
 # Light green header for actif
 upload_df_to_sheet(df_actif, "Actif", (0.8, 1, 0.8))
 
 # Light red header for inactif
 upload_df_to_sheet(df_inactif, "Inactif", (1, 0.8, 0.8))
 
-print("✅ Both sheets updated in the same spreadsheet!")
+# Light blue header for main sheet (all data)
+upload_df_to_sheet(df, "Main", (0.8, 0.9, 1))
+
+print("✅ All sheets updated in the same spreadsheet!")
+
