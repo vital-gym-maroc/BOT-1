@@ -205,6 +205,9 @@ for col in phone_cols:
 # Set 'ID' as the index
 cols = ['ID'] + [c for c in df.columns if c != 'ID']
 df = df[cols]
+df = df.replace([float('inf'), float('-inf')], None)
+df = df.fillna('')
+
 
 print("Scraping finished. Total records:", len(df))
 
