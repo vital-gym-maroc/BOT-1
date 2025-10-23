@@ -119,7 +119,6 @@ import time
 all_data = []  # store all rows
 
 links = df_links['Lien_ID'].astype(str).str.strip().tolist()
-links = links[:20]
 
 for d in links:
     print("Visiting:", d)
