@@ -41,6 +41,15 @@ jobs:
           rm -rf chromedriver-linux64*
 
       # ------------------------
+      # Create Service Account JSON
+      # ------------------------
+      - name: Create Google Service Account JSON
+        run: |
+          echo "$GOOGLE_SERVICE_ACCOUNT_JSON" > Gym_Json.json
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+
+      # ------------------------
       # Install Python dependencies
       # ------------------------
       - name: Install Python dependencies
@@ -53,7 +62,9 @@ jobs:
       # ------------------------
       - name: Run Tender Bot
         env:
-          PYTHONUNBUFFERED: 1
+          EMAIL: ${{ secrets.EMAIL }}
+          PASSWORD: ${{ secrets.PASSWORD }}
+          SPREADSHEET_URL: ${{ secrets.SPREADSHEET_URL }}
         run: python scripts/gym_bot.py
 
       # ------------------------
