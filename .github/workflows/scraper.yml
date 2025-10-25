@@ -76,7 +76,8 @@ jobs:
         with:
           name: tender_downloads
           path: /home/runner/work/downloads
-
+          if-no-files-found: ignore   # ✅ prevents job failure if empty
+      
       # ------------------------
       # Upload login failure screenshots
       # ------------------------
@@ -86,3 +87,4 @@ jobs:
         with:
           name: login-screenshots
           path: login_debug_*.png
+          if-no-files-found: ignore   # ✅ same here
