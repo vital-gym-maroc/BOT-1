@@ -3,6 +3,7 @@ import time
 import re
 import requests
 import pandas as pd
+import os
 from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -14,8 +15,8 @@ from selenium.common.exceptions import NoSuchElementException, ElementClickInter
 # ------------------------
 # Configuration
 # ------------------------
-email = 'anaslachhab666@gmail.com'
-password = 'Automatisation2025'
+email = os.getenv("EMAIL")
+password = os.getenv("PASSWORD")
 DOWNLOAD_DIR = "/home/runner/work/downloads"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
@@ -239,7 +240,7 @@ df_inactif = df[df["Statut"] == "inactif"]
 # ======================
 # Spreadsheet URL
 # ======================
-spreadsheet_url = "https://docs.google.com/spreadsheets/d/1mFq08rK9f5TNUiCkBbPBBKYJBV4EIxkTQIkjTlQNO48/edit"
+spreadsheet_url = os.getenv("SPREADSHEET_URL")
 spreadsheet = client.open_by_url(spreadsheet_url)
 
 # ======================
