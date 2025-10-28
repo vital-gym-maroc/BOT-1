@@ -121,6 +121,7 @@ import time
 all_data = []  # store all rows
 
 links = df_links['Lien_ID'].astype(str).str.strip().tolist()
+links = links[:5]
 
 for d in links:
     print("Visiting:", d)
@@ -217,76 +218,99 @@ import pandas as pd
 from google.oauth2.service_account import Credentials
 import gspread
 from gspread_formatting import *
-import os
+import os, json, traceback, sys
 
 # ======================
 # Google Sheets setup
 # ======================
-service_account_info = json.loads(os.environ["GOOGLE_SERVICE_ACCOUNT_JSON"])
-SCOPES = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
-credentials = Credentials.from_service_account_info(service_account_info, scopes=SCOPES)
-client = gspread.authorize(credentials)
+print("🔧 Setting up Google Sheets connection...")
 
-SPREADSHEET_URL = os.environ["SPREADSHEET_URL"]
-WORKSHEET_NAME = 'Main'
+try:
+    service_account_info = json.loads(os.environ["GOOGLE_SERVICE_ACCOUNT_JSON"])
+    SCOPES = [
+        "https://www.googleapis.com/auth/spreadsheets",
+        "https://www.googleapis.com/auth/drive"
+    ]
+    credentials = Credentials.from_service_account_info(service_account_info, scopes=SCOPES)
+    client = gspread.authorize(credentials)
+
+    SPREADSHEET_URL = os.environ["SPREADSHEET_URL"]
+    spreadsheet = client.open_by_url(SPREADSHEET_URL)
+    print("✅ Google Sheets connection OK.")
+except Exception as e:
+    print("❌ Google Sheets setup failed:")
+    traceback.print_exc()
+    sys.exit(1)
 
 # ======================
-# Split DataFrame
+# Split DataFrame safely
 # ======================
-df_actif = df[df["Statut"] == "actif"]
-df_inactif = df[df["Statut"] == "inactif"]
-
-# ======================
-# Spreadsheet URL
-# ======================
-spreadsheet_url = os.getenv("SPREADSHEET_URL")
-spreadsheet = client.open_by_url(spreadsheet_url)
+try:
+    print("📊 Splitting data into actif/inactif...")
+    df_actif = df[df["Statut"] == "actif"]
+    df_inactif = df[df["Statut"] == "inactif"]
+    print(f"✅ Data split done: {len(df_actif)} actif, {len(df_inactif)} inactif, total {len(df)}")
+except Exception as e:
+    print("❌ Error splitting DataFrame:")
+    traceback.print_exc()
+    sys.exit(1)
 
 # ======================
 # Function to upload DF to a sheet with formatting
 # ======================
 def upload_df_to_sheet(df, sheet_name, color_rgb):
-    # Get or create the worksheet
+    print(f"\n📤 Uploading to sheet: {sheet_name} ({len(df)} rows)")
     try:
-        worksheet = spreadsheet.worksheet(sheet_name)
-        worksheet.clear()
-    except gspread.WorksheetNotFound:
-        worksheet = spreadsheet.add_worksheet(title=sheet_name, rows=str(len(df)+10), cols=str(len(df.columns)+5))
-    
-    # Upload data (header + values)
-    worksheet.update([df.columns.values.tolist()] + df.values.tolist())
+        # Get or create worksheet
+        try:
+            worksheet = spreadsheet.worksheet(sheet_name)
+            worksheet.clear()
+            print(f"🧹 Cleared existing worksheet '{sheet_name}'")
+        except gspread.WorksheetNotFound:
+            worksheet = spreadsheet.add_worksheet(
+                title=sheet_name,
+                rows=str(len(df) + 10),
+                cols=str(len(df.columns) + 5)
+            )
+            print(f"📄 Created new worksheet '{sheet_name}'")
 
-    # Apply borders
-    rows, cols = df.shape
-    total_rows = rows + 1  # include header
-    cell_range = f"A1:{gspread.utils.rowcol_to_a1(total_rows, cols)}"
+        # Upload data
+        worksheet.update([df.columns.values.tolist()] + df.values.tolist())
+        print(f"✅ Data uploaded to '{sheet_name}'")
 
-    border_style = Border(style="SOLID", color=Color(0, 0, 0))
-    fmt_borders = CellFormat(
-        borders=Borders(top=border_style, bottom=border_style, left=border_style, right=border_style)
-    )
-    format_cell_range(worksheet, cell_range, fmt_borders)
+        # Apply formatting
+        rows, cols = df.shape
+        total_rows = rows + 1
+        cell_range = f"A1:{gspread.utils.rowcol_to_a1(total_rows, cols)}"
 
-    # Header formatting
-    header_format = CellFormat(
-        backgroundColor=Color(*color_rgb),
-        textFormat=TextFormat(bold=True)
-    )
-    format_cell_range(worksheet, "1:1", header_format)
+        border_style = Border(style="SOLID", color=Color(0, 0, 0))
+        fmt_borders = CellFormat(
+            borders=Borders(top=border_style, bottom=border_style, left=border_style, right=border_style)
+        )
+        format_cell_range(worksheet, cell_range, fmt_borders)
 
-    print(f"✅ Sheet '{sheet_name}' updated successfully!")
+        header_format = CellFormat(
+            backgroundColor=Color(*color_rgb),
+            textFormat=TextFormat(bold=True)
+        )
+        format_cell_range(worksheet, "1:1", header_format)
+        print(f"🎨 Formatting applied on '{sheet_name}'")
+
+    except Exception as e:
+        print(f"❌ Failed to update sheet '{sheet_name}':")
+        traceback.print_exc()
 
 # ======================
 # Upload sheets
 # ======================
-# Light green header for actif
-upload_df_to_sheet(df_actif, "Actif", (0.8, 1, 0.8))
+try:
+    upload_df_to_sheet(df_actif, "Actif", (0.8, 1, 0.8))
+    upload_df_to_sheet(df_inactif, "Inactif", (1, 0.8, 0.8))
+    upload_df_to_sheet(df, "Main", (0.8, 0.9, 1))
+    print("\n✅ All sheets updated successfully!")
+except Exception as e:
+    print("\n❌ Fatal error while uploading to Google Sheets:")
+    traceback.print_exc()
+    sys.exit(1)
 
-# Light red header for inactif
-upload_df_to_sheet(df_inactif, "Inactif", (1, 0.8, 0.8))
-
-# Light blue header for main sheet (all data)
-upload_df_to_sheet(df, "Main", (0.8, 0.9, 1))
-
-print("✅ All sheets updated in the same spreadsheet!")
 
