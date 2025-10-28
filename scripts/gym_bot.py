@@ -220,31 +220,61 @@ import gspread
 from gspread_formatting import *
 import os, json, traceback, sys
 
-# ======================
-# Google Sheets setup
-# ======================
+# =====================================================
+# STEP 1 — GOOGLE SHEETS CONNECTION SETUP
+# =====================================================
 print("🔧 Setting up Google Sheets connection...")
 
 try:
-    service_account_info = json.loads(os.environ["GOOGLE_SERVICE_ACCOUNT_JSON"])
+    # --- Check environment variables ---
+    if "GOOGLE_SERVICE_ACCOUNT_JSON" not in os.environ:
+        raise KeyError("Environment variable GOOGLE_SERVICE_ACCOUNT_JSON not found!")
+    if "SPREADSHEET_URL" not in os.environ:
+        raise KeyError("Environment variable SPREADSHEET_URL not found!")
+
+    print("✅ Environment variables found.")
+
+    # --- Parse the service account JSON ---
+    try:
+        json_str = os.environ["GOOGLE_SERVICE_ACCOUNT_JSON"]
+        print(f"🧩 JSON string length: {len(json_str)} characters")
+        service_account_info = json.loads(json_str)
+        print("✅ JSON parsed correctly.")
+    except json.JSONDecodeError as je:
+        print("❌ JSON format error — invalid GOOGLE_SERVICE_ACCOUNT_JSON content:")
+        print(je)
+        sys.exit(1)
+
+    # --- Build credentials ---
     SCOPES = [
         "https://www.googleapis.com/auth/spreadsheets",
         "https://www.googleapis.com/auth/drive"
     ]
     credentials = Credentials.from_service_account_info(service_account_info, scopes=SCOPES)
-    client = gspread.authorize(credentials)
+    print("✅ Credentials object created.")
 
+    # --- Authorize client ---
+    client = gspread.authorize(credentials)
+    print("✅ Authorized gspread client.")
+
+    # --- Try to open spreadsheet ---
     SPREADSHEET_URL = os.environ["SPREADSHEET_URL"]
+    print(f"🌐 Attempting to open spreadsheet: {SPREADSHEET_URL}")
     spreadsheet = client.open_by_url(SPREADSHEET_URL)
     print("✅ Google Sheets connection OK.")
+
 except Exception as e:
-    print("❌ Google Sheets setup failed:")
+    print("\n❌ Google Sheets setup failed!")
     traceback.print_exc()
+    print(f"\n🧠 HINTS:\n"
+          f" - Check your environment variables in GitHub Actions or your local .env file\n"
+          f" - Ensure GOOGLE_SERVICE_ACCOUNT_JSON is a *valid* JSON (no multiline / escaped quotes issue)\n"
+          f" - Ensure SPREADSHEET_URL is the full URL (starts with https://docs.google.com/spreadsheets/...)\n")
     sys.exit(1)
 
-# ======================
-# Split DataFrame safely
-# ======================
+# =====================================================
+# STEP 2 — SPLIT DATAFRAME
+# =====================================================
 try:
     print("📊 Splitting data into actif/inactif...")
     df_actif = df[df["Statut"] == "actif"]
@@ -255,13 +285,13 @@ except Exception as e:
     traceback.print_exc()
     sys.exit(1)
 
-# ======================
-# Function to upload DF to a sheet with formatting
-# ======================
+# =====================================================
+# STEP 3 — FUNCTION TO UPLOAD DATAFRAME TO SHEET
+# =====================================================
 def upload_df_to_sheet(df, sheet_name, color_rgb):
     print(f"\n📤 Uploading to sheet: {sheet_name} ({len(df)} rows)")
     try:
-        # Get or create worksheet
+        # --- Get or create worksheet ---
         try:
             worksheet = spreadsheet.worksheet(sheet_name)
             worksheet.clear()
@@ -274,13 +304,13 @@ def upload_df_to_sheet(df, sheet_name, color_rgb):
             )
             print(f"📄 Created new worksheet '{sheet_name}'")
 
-        # Upload data
+        # --- Upload data (headers + rows) ---
         worksheet.update([df.columns.values.tolist()] + df.values.tolist())
         print(f"✅ Data uploaded to '{sheet_name}'")
 
-        # Apply formatting
+        # --- Apply borders ---
         rows, cols = df.shape
-        total_rows = rows + 1
+        total_rows = rows + 1  # include header
         cell_range = f"A1:{gspread.utils.rowcol_to_a1(total_rows, cols)}"
 
         border_style = Border(style="SOLID", color=Color(0, 0, 0))
@@ -289,6 +319,7 @@ def upload_df_to_sheet(df, sheet_name, color_rgb):
         )
         format_cell_range(worksheet, cell_range, fmt_borders)
 
+        # --- Header formatting ---
         header_format = CellFormat(
             backgroundColor=Color(*color_rgb),
             textFormat=TextFormat(bold=True)
@@ -300,9 +331,9 @@ def upload_df_to_sheet(df, sheet_name, color_rgb):
         print(f"❌ Failed to update sheet '{sheet_name}':")
         traceback.print_exc()
 
-# ======================
-# Upload sheets
-# ======================
+# =====================================================
+# STEP 4 — UPLOAD ALL SHEETS
+# =====================================================
 try:
     upload_df_to_sheet(df_actif, "Actif", (0.8, 1, 0.8))
     upload_df_to_sheet(df_inactif, "Inactif", (1, 0.8, 0.8))
@@ -312,5 +343,3 @@ except Exception as e:
     print("\n❌ Fatal error while uploading to Google Sheets:")
     traceback.print_exc()
     sys.exit(1)
-
-
