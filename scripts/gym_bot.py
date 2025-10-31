@@ -121,6 +121,7 @@ import time
 all_data = []  # store all rows
 
 links = df_links['Lien_ID'].astype(str).str.strip().tolist()
+links = links[:5]
 
 for d in links:
     print("Visiting:", d)
@@ -327,8 +328,10 @@ def upload_df_to_sheet(df, sheet_name, color_rgb):
         print(f"🎨 Formatting applied on '{sheet_name}'")
 
     except Exception as e:
-        print(f"❌ Failed to update sheet '{sheet_name}':")
+        print(f"❌ Failed to update sheet '{sheet_name}': {e}")
         traceback.print_exc()
+        raise  # 👈 Add this to stop and reveal the real error
+
 
 # =====================================================
 # STEP 4 — UPLOAD ALL SHEETS
