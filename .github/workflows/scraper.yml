@@ -27,18 +27,9 @@ jobs:
       # ------------------------
       # Install Chrome & ChromeDriver
       # ------------------------
-      - name: Install Chrome and ChromeDriver
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wget unzip xvfb
-          wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-          sudo apt install -y ./google-chrome-stable_current_amd64.deb
-          DRIVER_VERSION=$(curl -s "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_STABLE")
-          wget -q "https://storage.googleapis.com/chrome-for-testing-public/${DRIVER_VERSION}/linux64/chromedriver-linux64.zip"
-          unzip chromedriver-linux64.zip
-          sudo mv chromedriver-linux64/chromedriver /usr/local/bin/
-          sudo chmod +x /usr/local/bin/chromedriver
-          rm -rf chromedriver-linux64*
+      - name: Install Google Chrome
+        run: sudo apt-get install -y google-chrome-stable
+
 
       # ------------------------
       # Create Service Account JSON
