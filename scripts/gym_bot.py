@@ -39,8 +39,7 @@ options.add_experimental_option("prefs", {
     "safebrowsing.enabled": True,
 })
 
-service = Service("/usr/local/bin/chromedriver")
-driver = webdriver.Chrome(service=service, options=options)
+driver = webdriver.Chrome(options=options)
 wait = WebDriverWait(driver, 20)
 
 
